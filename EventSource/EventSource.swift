@@ -36,6 +36,7 @@ public class EventSource: NSObject, NSURLSessionDataDelegate {
 
     var event = Dictionary<String, String>()
 
+    public var queue = dispatch_get_main_queue()
 
     public init(url: String, headers: [String : String] = [:]) {
 
@@ -166,7 +167,7 @@ public class EventSource: NSObject, NSURLSessionDataDelegate {
 
         self.readyState = EventSourceState.Open
         if self.onOpenCallback != nil {
-            dispatch_async(dispatch_get_main_queue()) {
+            dispatch_async(queue) {
                 self.onOpenCallback!()
             }
         }
@@ -182,12 +183,15 @@ public class EventSource: NSObject, NSURLSessionDataDelegate {
         if error == nil || error!.code != -999 {
             let nanoseconds = Double(self.retryTime) / 1000.0 * Double(NSEC_PER_SEC)
             let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(nanoseconds))
-            dispatch_after(delayTime, dispatch_get_main_queue()) {
+            dispatch_after(delayTime, queue) {
                 self.connect()
             }
         }
-
-        dispatch_async(dispatch_get_main_queue()) {
+        
+        guard let dispatch_queue_t = queue else {
+            return
+        }
+        dispatch_async(dispatch_queue_t) {
             if let errorCallback = self.onErrorCallback {
                 errorCallback(error)
             } else {
@@ -252,15 +256,15 @@ public class EventSource: NSObject, NSURLSessionDataDelegate {
 
             if parsedEvent.event == nil {
                 if let data = parsedEvent.data, onMessage = self.onMessageCallback {
-                    dispatch_async(dispatch_get_main_queue()) {
                         onMessage(id: self.lastEventID, event: "message", data: data)
+                    dispatch_async(queue) {
                     }
                 }
             }
 
             if let event = parsedEvent.event, data = parsedEvent.data, eventHandler = self.eventListeners[event] {
-                dispatch_async(dispatch_get_main_queue()) {
                     eventHandler(id: self.lastEventID, event: event, data: data)
+                dispatch_async(queue) {
                 }
             }
         }
