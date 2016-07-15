@@ -54,7 +54,7 @@ class ConfigurationTests: XCTestCase {
 			print("id")
 		}
 
-		XCTAssertEqual(sut.events(), ["first", "second"])
+		XCTAssertEqual(sut.events, ["first", "second"])
 	}
 
 	func testRemoveEventListeners() {
@@ -64,7 +64,7 @@ class ConfigurationTests: XCTestCase {
 		}
 
 		sut.removeEventListener("first")
-		XCTAssertEqual(sut.events().count, 0)
+		XCTAssertEqual(sut.events.count, 0)
 	}
 
 	func testDefaultRetryTimeAndChangeRetryTime() {
